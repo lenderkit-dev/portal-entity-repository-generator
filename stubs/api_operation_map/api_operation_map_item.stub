@@ -1,0 +1,4 @@
+    {operationId}: {
+        url: "{url}",
+        method: "{method}"
+    },

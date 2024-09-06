@@ -1,0 +1,41 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+include 'src/helpers.php';
+include 'src/OasReader.php';
+include 'src/TsGenerator.php';
+include 'src/Config.php';
+$config = include 'config/config.php';
+
+use app\OasReader;
+use app\TsGenerator;
+
+$source = $argv[1] ?? '';
+$type = $argv[2] ?? '';
+$output = $argv[3] ?? './output';
+
+if (count($argv) < 3 || ! in_array($type, TsGenerator::allowedTypes())) {
+    printLine(implode(PHP_EOL, [
+        'Usage: php script.php <source> <type> <output base dir, default to "./output">',
+        'Source: filename or url',
+        sprintf('Type: use one of available options (%s)', implode(', ', TsGenerator::allowedTypes())),
+        'Output: output base path (depends on product or commercial structure)',
+    ]));
+    printAbort('Please check your command.');
+}
+
+$reader = new OasReader();
+$data = $reader->getData($source);
+if (! $data) {
+    printAbort('Can\'t detect the source or it\'s empty. Please check the source!');
+}
+printInfo('Complete reading source.');
+
+$output = str_ends_with($output, '/') ? $output : "{$output}/";
+
+$generator = new TsGenerator(new \app\Config($config));
+printInfo('Generating files...');
+$generator->generate($data, $type, $output);
+printSuccess('Script completed.');

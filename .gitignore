@@ -1,2 +1,9 @@
-/.idea
-/.vscode
+# windows/Mac thumbnail cache
+Thumbs.db
+.DS_Store
+.idea
+.env
+/vendor
+
+docker-compose.yml
+config/config.php

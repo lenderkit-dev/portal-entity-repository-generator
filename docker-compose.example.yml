@@ -1,0 +1,17 @@
+services:
+  portal-entity-repository-generator:
+    image: hub.jcdev.net:24000/php8.2-fpm-bullseye:8.2.17
+    platform: linux/amd64
+    build: .
+    environment:
+      FOREGROUND_PROCESS: php-fpm
+      CONTAINER_ENABLED: 1
+    volumes:
+      - ./src:/var/www/html/src
+      - ./bin:/var/www/html/bin
+      - ./output:/var/www/html/output
+      - ./stubs:/var/www/html/stubs
+      - ./config:/var/www/html/config
+      - ./source:/var/www/html/source
+    ports:
+      - "8007:80"
