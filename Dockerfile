@@ -1,5 +1,9 @@
-FROM php:8.2-fpm
+FROM hub.jcdev.net:24000/php8.2-fpm-bullseye:8.2.17
 
-ADD https://raw.githubusercontent.com/mlocati/docker-php-extension-installer/master/install-php-extensions /usr/local/bin/
-RUN chmod uga+x /usr/local/bin/install-php-extensions && sync && \
-    install-php-extensions yaml
+RUN apt-get update \
+    && apt-get install -y libyaml-dev \
+    && docker-php-ext-enable yaml \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . .

@@ -1,6 +1,6 @@
 services:
   portal-entity-repository-generator:
-    image: hub.jcdev.net:24000/php8.2-fpm-bullseye:8.2.17
+    image: portal-entity-repository-generator
     platform: linux/amd64
     build: .
     environment:

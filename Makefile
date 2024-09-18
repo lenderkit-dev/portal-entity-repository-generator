@@ -47,4 +47,4 @@ bash:
 	${DC_EXEC} portal-entity-repository-generator bash
 
 generate:
-	${DC_RUN} portal-entity-repository-generator bash -c "php bin/peg $(source) $(type) $(output)"
+	docker run -it --rm portal-entity-repository-generator php bin/peg $(source) $(type) $(output)
