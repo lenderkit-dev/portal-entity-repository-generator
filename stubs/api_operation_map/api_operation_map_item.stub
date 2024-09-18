@@ -1,4 +1,5 @@
     {operationId}: {
         url: "{url}",
-        method: "{method}"
+        method: "{method}",
+        responseType: '{responseType}'
     },

@@ -7,6 +7,13 @@ return [
         'models' => 'src/models/',
         'api_models_map' => 'src/api/',
     ],
+    'filename' => [
+        'models_template' => '{entity}Model.ts',
+        'operation_map' => 'ApiOperationMap.ts',
+    ],
+    'filter_regex' => [
+        'models' => '/^.*Resource$/',
+    ],
     'generic_types' => [
         'boolean' => 'boolean',
         'array' => 'array',
@@ -17,6 +24,10 @@ return [
             'Date' => [
                 'ts_type' => 'Date',
                 'ts_import' => 'import type { Date } from \'@lk-core/model/component/Date\';',
+            ],
+            'DateTime' => [
+                'ts_type' => 'DateTime',
+                'ts_import' => 'import type { DateTime } from \'@lk-core/model/component/DateTime\';',
             ],
             'Money' => [
                 'ts_type' => 'Money',

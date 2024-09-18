@@ -47,14 +47,27 @@ class TsGenerator
             foreach ($pathInfo as $method => $info) {
                 $operationId = $info['operationId'];
 
-                if (! $operationId) {
+                if (! $operationId || str_contains($operationId, ':') || str_contains($operationId, '.')) {
+                    printWarning("Operation Id not exist or wrong format: path '{$path}', id '{$operationId}'");
+
                     continue;
                 }
 
-                $operationItems .= str_replace(
-                    ['{operationId}', '{url}', '{method}'],
-                    [$operationId, $path, strtoupper($method)],
+                $responseType = $this->getResponseType($data, array_shift($info['responses']));
+
+                if (!$responseType) {
+                    printWarning("Can't resolve response type for {$operationId}: '{$path}' {$method}");
+                    $responseType = 'collection';
+                }
+
+                $operationItems .= strtr(
                     $operationItemsTemplate,
+                    [
+                        '{operationId}' => $operationId,
+                        '{url}' => $path,
+                        '{method}' => strtoupper($method),
+                        '{responseType}' => $responseType,
+                    ],
                 );
             }
         }
@@ -64,8 +77,9 @@ class TsGenerator
             file_get_contents('stubs/api_operation_map/api_operation_map.stub'),
         );
 
-        $configOutput = $this->config->getOutputStructure();
-        $path = "{$output}{$configOutput['api_models_map']}ApiOperationMap.ts";
+        $filename = $this->config->getFilename('operation_map');
+        $outputStructure = $this->config->getOutputStructure('api_models_map');
+        $path = "{$output}{$outputStructure}{$filename}";
         $this->saveFile($path, $content);
 
         printSuccess("ApiOperationMap has been generated to '{$path}'.");
@@ -75,12 +89,16 @@ class TsGenerator
     {
         printInfo('Generating models...');
 
-        $definitions = $data['definitions'] ?? [];
+        $models = array_filter(
+            $data['components']['schemas'] ?? [],
+            fn($key) => preg_match($this->config->getFilterRegex('models'), $key),
+            ARRAY_FILTER_USE_KEY,
+        );
 
-        foreach ($definitions as $model => $definition) {
+        foreach ($models as $model => $modelData) {
             printInfo("Generating model {$model}...");
 
-            $modelModule = $definition['x-module'] ?? '';
+            $modelModule = $modelData['x-module'] ?? '';
 
             if (! $modelModule) {
                 printWarning('Model has no "x-module" property...');
@@ -90,17 +108,10 @@ class TsGenerator
 
             $additionalImport = [];
             $additionalProperties = '';
-            $properties = $definition['properties']['attributes']['properties'] ?? [];
-            $modelType = $definition['properties']['type']['type'] ?? '';
+            $properties = $modelData['properties']['attributes']['properties'] ?? [];
+            $modelType = $modelData['properties']['type']['type'] ?? '';
 
-            // todo update when there will be final format
-            if (isset($definition['properties']['type']['default'])) {
-                $modelTypeValue = $definition['properties']['type']['default'];
-            } elseif (isset($definition['example']['type'])) {
-                $modelTypeValue = $definition['example']['type'];
-            } else {
-                $modelTypeValue = strtolower($model);
-            }
+            $modelTypeValue = $modelData['properties']['type']['example'] ?? '';
 
             if (! $modelType || ! $modelTypeValue || ! $properties) {
                 printWarning('Model has no type, type value or properties...');
@@ -108,7 +119,7 @@ class TsGenerator
                 continue;
             }
 
-            $requiredProperties = $definition['properties']['attributes']['required'] ?? [];
+            $requiredProperties = $modelData['properties']['attributes']['required'] ?? [];
 
             foreach ($properties as $propertyName => $propertyInfo) {
                 if (! isset($propertyInfo['x-module']) || $propertyInfo['x-module'] !== $modelModule) {
@@ -118,9 +129,7 @@ class TsGenerator
                 [$propertyType, $addImport] = $this->getPropertyType($propertyInfo);
                 $additionalImport = array_merge($additionalImport, $addImport);
 
-                if (! isset($propertyInfo['default']) && in_array($propertyName, $requiredProperties)) {
-                    $defaultValue = '';
-                } elseif (isset($propertyInfo['default'])) {
+                if (isset($propertyInfo['default'])) {
                     $defaultValue = 'string' === $propertyType
                         ? "'{$propertyInfo['default']}'"
                         : $propertyInfo['default'];
@@ -128,59 +137,114 @@ class TsGenerator
                     $defaultValue = 'null';
                 }
 
-                $additionalProperties .= str_replace(
-                    ['{name}', '{type}', '{nullAble}', '{default}'],
-                    [
-                        $propertyName,
-                        $propertyType,
-                        in_array($propertyName, $requiredProperties) ? '' : ' | null',
-                        $defaultValue,
-                    ],
+                $additionalProperties .= strtr(
                     file_get_contents('stubs/model/model_property.stub'),
+                    [
+                        '{name}' => $propertyName,
+                        '{type}' => $propertyType,
+                        '{nullable}' => in_array($propertyName, $requiredProperties) ? '' : ' | null',
+                        '{default}' => $defaultValue,
+                    ],
                 );
             }
 
-            $content = str_replace(
-                ['{additionalImport}', '{modelName}', '{modelType}', '{modelTypeValue}', '{properties}'],
-                [
-                    implode(PHP_EOL, $additionalImport),
-                    $model,
-                    $modelType,
-                    $modelTypeValue,
-                    $additionalProperties,
-                ],
+            $content = strtr(
                 file_get_contents('stubs/model/model.stub'),
+                [
+                    '{additionalImport}' => implode(PHP_EOL, $additionalImport),
+                    '{modelName}' => $model,
+                    '{modelType}' => $modelType,
+                    '{modelTypeValue}' => $modelTypeValue,
+                    '{properties}' => $additionalProperties,
+                ],
             );
 
-            $configOutput = $this->config->getOutputStructure();
-            $path = "{$output}{$configOutput['models']}{$model}Model.ts";
+            $outputStructure = $this->config->getOutputStructure('models');
+            $filename = str_replace('{entity}', $model, $this->config->getFilename('models_template'));
+            $path = "{$output}{$outputStructure}{$filename}";
             $this->saveFile($path, $content);
             printSuccess("Model has been generated to '{$path}'.");
         }
+    }
+
+    protected function getResponseType(array $data, string|array $response): string
+    {
+        $resource = 'resource';
+        $collection = 'collection';
+
+        if (is_string($response)) {
+            return $this->getResponseType($data, $this->resolveRef($data, $response));
+        }
+
+        if (isset($response['content']['application/json']['schema'])) {
+            $schema = $response['content']['application/json']['schema'];
+
+            if (isset($schema['type'])) {
+                return $schema['type'] === 'object' ? $resource : $collection;
+            } elseif (isset($schema['anyOf'])) {
+                return '';
+            } elseif (isset($schema['allOf'])) {
+                $allOffResponse = array_pop($schema['allOf']);
+
+                if (isset($allOffResponse['properties']['data']['type'])) {
+                    return $allOffResponse['properties']['data']['type'] === 'object' ? $resource : $collection;
+                } elseif (isset($allOffResponse['properties']['data']['$ref'])) {
+                    if (preg_match('/^.*Resource$/', $allOffResponse['properties']['data']['$ref'])) {
+                        return $resource;
+                    } elseif (preg_match('/^.*Collection$/', $allOffResponse['properties']['data']['$ref'])) {
+                        return $collection;
+                    }
+                }
+            } elseif (isset($schema['$ref'])) {
+                return $this->getResponseType($data, $schema['$ref']);
+            }
+        }
+
+        return '';
+    }
+
+    protected function resolveRef(array $source, string $path): array
+    {
+        $keys = explode('/', trim($path, '#/'));
+
+        foreach ($keys as $key) {
+            if (isset($source[$key])) {
+                $source = $source[$key];
+            } else {
+                printError("Can't resolve ref: '{$path}'");
+
+                return [];
+            }
+        }
+
+        return $source;
     }
 
     protected function getPropertyType(array $propertyInfo): array
     {
         $additionalImport = [];
         $propertyType = '';
-        $typeConfigs = $this->config->getGenericTypes();
-
 
         if (isset($propertyInfo['type'])) {
-            if (! isset($typeConfigs[$propertyInfo['type']])) {
+            $type = is_array($propertyInfo['type']) ? array_shift($propertyInfo['type']) : $propertyInfo['type'];
+            $typeConfigs = $this->config->getGenericTypes($type);
+
+            if (! $typeConfigs) {
                 printAbort("Undefined property type '{$propertyInfo['type']}'. Please check config!");
             }
 
-            $propertyType = $typeConfigs[$propertyInfo['type']];
+            $propertyType = $typeConfigs;
         } elseif (isset($propertyInfo['$ref'])) {
+            $typeConfigs = $this->config->getGenericTypes('$ref');
+
             $pos = strrpos($propertyInfo['$ref'], '/');
             $propertyType = $pos !== false ? substr($propertyInfo['$ref'], $pos + 1) : $propertyInfo['$ref'];
 
-            if (! isset($typeConfigs['$ref'][$propertyType])) {
+            if (! isset($typeConfigs[$propertyType])) {
                 printAbort("Undefined \$ref '{$propertyType}'. Please check config!");
             }
 
-            $additionalImport[$propertyType] = $typeConfigs['$ref'][$propertyType]['ts_import'];
+            $additionalImport[$propertyType] = $typeConfigs[$propertyType]['ts_import'];
         }
 
         if (! $propertyType) {
@@ -203,7 +267,7 @@ class TsGenerator
 
         if (!is_dir($directory)) {
             printInfo("Creating directory '{$directory}'");
-            mkdir($directory, 0777, true);
+            mkdir($directory, 0755, true);
         }
 
         file_put_contents($path, $data);

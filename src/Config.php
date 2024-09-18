@@ -10,6 +10,10 @@ class Config
 
     private array $generic_types;
 
+    private array $filter_regex;
+
+    private array $filename;
+
     public function __construct($configs)
     {
         $this->output_structure = array_map(
@@ -18,15 +22,27 @@ class Config
         );
 
         $this->generic_types = $configs['generic_types'];
+        $this->filter_regex = $configs['filter_regex'];
+        $this->filename = $configs['filename'];
     }
 
-    public function getOutputStructure(): array
+    public function getOutputStructure(string $type): string
     {
-        return $this->output_structure;
+        return $this->output_structure[$type];
     }
 
-    public function getGenericTypes(): array
+    public function getGenericTypes(string $type): array|string
     {
-        return $this->generic_types;
+        return $this->generic_types[$type] ?? [];
+    }
+
+    public function getFilterRegex(string $type): string
+    {
+        return $this->filter_regex[$type];
+    }
+
+    public function getFilename(string $type): string
+    {
+        return $this->filename[$type];
     }
 }

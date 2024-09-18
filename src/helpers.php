@@ -14,31 +14,36 @@ define('ANSI_WHITE', "\033[0;37m");
 
 function printLine(string $message): void
 {
-    echo ANSI_WHITE . "{$message}\033[0m" . PHP_EOL;
+    echo formatMessage(ANSI_WHITE, $message);
 }
 
 function printInfo(string $message): void
 {
-    echo ANSI_BLUE . "{$message}\033[0m" . PHP_EOL;
+    echo formatMessage(ANSI_BLUE, $message);
 }
 
 function printSuccess(string $message): void
 {
-    echo ANSI_GREEN . "{$message}\033[0m" . PHP_EOL;
+    echo formatMessage(ANSI_GREEN, $message);
 }
 
 function printWarning(string $message): void
 {
-    echo ANSI_YELLOW . "{$message}\033[0m" . PHP_EOL;
+    echo formatMessage(ANSI_YELLOW, $message);
 }
 
 function printError(string $message): void
 {
-    echo ANSI_RED . "{$message}\033[0m" . PHP_EOL;
+    echo formatMessage(ANSI_RED, $message);
 }
 
 function printAbort(string $message): void
 {
     printError($message);
     exit(1);
+}
+
+function formatMessage(string $color, string $message): string
+{
+    return "{$color}{$message}" . ANSI_RESET . PHP_EOL;
 }
