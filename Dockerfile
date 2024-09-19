@@ -1,4 +1,5 @@
-FROM hub.jcdev.net:24000/php8.2-fpm-bullseye:8.2.17
+#FROM hub.jcdev.net:24000/php8.2-fpm-bullseye:8.2.17
+FROM php:8.2-fpm-bullseye
 
 RUN apt-get update \
     && apt-get install -y libyaml-dev \
