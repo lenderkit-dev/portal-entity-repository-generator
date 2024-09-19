@@ -2,6 +2,7 @@ services:
   portal-entity-repository-generator:
     image: portal-entity-repository-generator:latest
     platform: linux/amd64
+    build: .
     environment:
       FOREGROUND_PROCESS: php-fpm
       CONTAINER_ENABLED: 1

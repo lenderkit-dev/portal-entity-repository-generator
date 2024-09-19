@@ -13,19 +13,28 @@ use app\Config;
 use app\OasReader;
 use app\TsGenerator;
 
-$source = $argv[1] ?? '';
-$type = $argv[2] ?? '';
-$output = $argv[3] ?? './output';
+
+if (! getenv('PEG_OAS') || ! getenv('PEG_OP')) {
+    $source = $argv[1] ?? '';
+    $type = $argv[2] ?? '';
+    $module = $argv[3] ?? '';
+    $output = $argv[4] ?? './output';
+} else {
+    $source = getenv('PEG_OAS');
+    $type = getenv('PEG_OP');
+    $module = getenv('PEG_MODULE') ?: '';
+    $output = getenv('PEG_OUTPUT') ?: './output';
+}
 
 if (! $source || ! $type || ! in_array($type, TsGenerator::allowedTypes())) {
     printLine(implode(PHP_EOL, [
-        'Usage directly: `make generate source=<source> type=<type> output=<output base dir, default to "./output">`',
-        'Docker run: `docker run -it --rm portal-entity-repository-generator php bin/peg <source> <type> <output>`',
+        'Usage directly: `make generate source=<source> type=<type> module=<module> output=<output base dir, default to "./output">`',
+        'Docker run: `docker run -it --rm portal-entity-repository-generator php bin/peg <source> <type> <module> <output>`',
         'Source: filename or url',
         sprintf('Type: use one of available options (%s)', implode(', ', TsGenerator::allowedTypes())),
         'Output: output base path (depends on product or commercial structure)',
     ]));
-    printAbort('Please check your command.');
+    printAbort('Please check your command parameters. Parameters could be set through .env file or directly with command.');
 }
 
 $reader = new OasReader();
@@ -39,5 +48,10 @@ $output = str_ends_with($output, '/') ? $output : "{$output}/";
 
 $generator = new TsGenerator(new Config($config));
 printInfo('Generating files...');
-$generator->generate($data, $type, $output);
+
+if ($module) {
+    printWarning("Apply filter by module {$module}...");
+}
+
+$generator->generate($data, $type, $module, $output);
 printSuccess('Script completed.');

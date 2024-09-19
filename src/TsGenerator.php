@@ -22,16 +22,16 @@ class TsGenerator
         ];
     }
 
-    public function generate(array $data, string $type, string $output): void
+    public function generate(array $data, string $type, string $module, string $output): void
     {
         match ($type) {
-            static::OP_API_OPERATION_MAP => $this->generateApiOperationMap($data, $output),
-            static::OP_MODEL => $this->generateModel($data, $output),
-            static::OP_GENERAL => $this->generateGeneral($data, $output),
+            static::OP_API_OPERATION_MAP => $this->generateApiOperationMap($data, $module, $output),
+            static::OP_MODEL => $this->generateModel($data, $module, $output),
+            static::OP_GENERAL => $this->generateGeneral($data, $module, $output),
         };
     }
 
-    protected function generateApiOperationMap(array $data, string $output): void
+    protected function generateApiOperationMap(array $data, string $module, string $output): void
     {
         printInfo('Generating ApiOperationMap...');
 
@@ -45,6 +45,12 @@ class TsGenerator
             }
 
             foreach ($pathInfo as $method => $info) {
+                if ($module && (! isset($info['x-module']) || ! in_array($module, $info['x-module']))) {
+                    printInfo("x-module not match with provided module: path '{$path}', method '{$method}'");
+
+                    continue;
+                }
+
                 $operationId = $info['operationId'];
 
                 if (! $operationId || str_contains($operationId, ':') || str_contains($operationId, '.')) {
@@ -85,7 +91,7 @@ class TsGenerator
         printSuccess("ApiOperationMap has been generated to '{$path}'.");
     }
 
-    protected function generateModel(array $data, string $output): void
+    protected function generateModel(array $data, string $module, string $output): void
     {
         printInfo('Generating models...');
 
@@ -102,6 +108,12 @@ class TsGenerator
 
             if (! $modelModule) {
                 printWarning('Model has no "x-module" property...');
+
+                continue;
+            }
+
+            if ($module && ! in_array($module, $modelModule)) {
+                printInfo("x-module not match with provided module: model {$model}");
 
                 continue;
             }
@@ -255,7 +267,7 @@ class TsGenerator
         return [$propertyType, $additionalImport];
     }
 
-    protected function generateGeneral(array $data, string $output): string
+    protected function generateGeneral(array $data, string $module, string $output): string
     {
         // TODO generate general data
         return '';
