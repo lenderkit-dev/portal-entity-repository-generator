@@ -4,6 +4,3 @@ Thumbs.db
 .idea
 .env
 /vendor
-
-docker-compose.yml
-config/config.php
