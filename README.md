@@ -11,8 +11,7 @@ Run command with params
 
 or directly to Docker
 
-'docker run -it --rm -v ./source:/var/www/html/source -v ./output:/var/www/html/output portal-entity-repository-generator:latest source/source.yaml model ./output'
-
+'docker run -it --rm -v ./source:/app/source -v ./output:/app/output portal-entity-repository-generator:latest source/source.yaml model ./output'
 
 * Source - path to file or url with swagger source.
   * In case using local file, put file to source directory and specify path to file like `source=source/oas.json`.

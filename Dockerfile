@@ -7,8 +7,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /var/www/html/
+WORKDIR /app/
 COPY . .
     
-ENTRYPOINT ["/usr/local/bin/php", "bin/peg" ]
+ENTRYPOINT ["/usr/local/bin/php", "/app/bin/peg" ]
 
