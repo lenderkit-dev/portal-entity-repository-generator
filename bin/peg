@@ -14,11 +14,11 @@ use app\OasReader;
 use app\TsGenerator;
 
 
-if (! getenv('PEG_OAS') || ! getenv('PEG_OP')) {
+if (isset($argv[1]) && isset($argv[2])) {
     $source = $argv[1] ?? '';
     $type = $argv[2] ?? '';
-    $module = $argv[3] ?? '';
-    $output = $argv[4] ?? './output';
+    $output = $argv[3] ?? './output';
+    $module = $argv[4] ?? '';
 } else {
     $source = getenv('PEG_OAS');
     $type = getenv('PEG_OP');

@@ -45,8 +45,8 @@ class TsGenerator
             }
 
             foreach ($pathInfo as $method => $info) {
-                if ($module && (! isset($info['x-module']) || ! in_array($module, $info['x-module']))) {
-                    printInfo("x-module not match with provided module: path '{$path}', method '{$method}'");
+                if ($module && (! isset($info['x-modules']) || ! in_array($module, $info['x-modules']))) {
+                    printInfo("x-modules not contain provided module: path '{$path}', method '{$method}'");
 
                     continue;
                 }
@@ -112,8 +112,8 @@ class TsGenerator
                 continue;
             }
 
-            if ($module && ! in_array($module, $modelModule)) {
-                printInfo("x-module not match with provided module: model {$model}");
+            if ($module && $module !== $modelModule) {
+                printInfo("x-module not match with provided module: model {$model}, model module '{$modelModule}'");
 
                 continue;
             }
