@@ -2,15 +2,16 @@ services:
   portal-entity-repository-generator:
     image: portal-entity-repository-generator:latest
     platform: linux/amd64
+    build: .
     environment:
       FOREGROUND_PROCESS: php-fpm
       CONTAINER_ENABLED: 1
     volumes:
-      - ./src:/var/www/html/src
-      - ./bin:/var/www/html/bin
+#      - ./src:/var/www/html/src
+#      - ./bin:/var/www/html/bin
       - ./output:/var/www/html/output
-      - ./stubs:/var/www/html/stubs
-      - ./config:/var/www/html/config
+#      - ./stubs:/var/www/html/stubs
+#      - ./config:/var/www/html/config
       - ./source:/var/www/html/source
     ports:
       - "8007:80"
