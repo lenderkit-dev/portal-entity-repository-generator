@@ -42,7 +42,7 @@ generate.models:
 		-e PEG_OAS=${OAS_SRC} \
 		-e PEG_OP=model \
 		-e PEG_MODULE=${M} \
-		docker.io/library/peg-php-cli
+		ghcr.io/lenderkit-dev/portal-entities-generator
 	sudo chown -R $$(whoami):$$(whoami) ${P}
 
 generate.api:
@@ -51,5 +51,5 @@ generate.api:
 		-e PEG_OAS=${OAS_SRC} \
 		-e PEG_OP=api_operation_map \
 		-e PEG_MODULE=${M} \
-		docker.io/library/peg-php-cli;
+		ghcr.io/lenderkit-dev/portal-entities-generator;
 	sudo chown -R $$(whoami):$$(whoami) ${P}
