@@ -16,10 +16,11 @@ return [
     ],
     'generic_types' => [
         'boolean' => 'boolean',
-        'array' => 'array',
+        'array' => 'Array',
         'object' => 'object',
         'string' => 'string',
         'integer' => 'number',
+        'number' => 'number',
         '$ref' => [
             'Date' => [
                 'ts_type' => 'Date',

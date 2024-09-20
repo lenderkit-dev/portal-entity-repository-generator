@@ -50,7 +50,7 @@ $generator = new TsGenerator(new Config($config));
 printInfo('Generating files...');
 
 if ($module) {
-    printWarning("Apply filter by module {$module}...");
+    printInfo("Apply filter by module {$module}...");
 }
 
 $generator->generate($data, $type, $module, $output);

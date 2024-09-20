@@ -19,7 +19,7 @@ function printLine(string $message): void
 
 function printInfo(string $message): void
 {
-    echo formatMessage(ANSI_BLUE, $message);
+    echo formatMessage(ANSI_RESET, $message);
 }
 
 function printSuccess(string $message): void
@@ -29,7 +29,7 @@ function printSuccess(string $message): void
 
 function printWarning(string $message): void
 {
-    echo formatMessage(ANSI_YELLOW, $message);
+    echo formatMessage(ANSI_YELLOW, "    WARNING! {$message}");
 }
 
 function printError(string $message): void

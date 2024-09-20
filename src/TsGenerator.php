@@ -45,8 +45,12 @@ class TsGenerator
             }
 
             foreach ($pathInfo as $method => $info) {
+                printInfo("Mapping path '{$path}', method '{$method}'...");
+
                 if ($module && (! isset($info['x-modules']) || ! in_array($module, $info['x-modules']))) {
-                    printInfo("x-modules not contain provided module: path '{$path}', method '{$method}'");
+                    printWarning(
+                        "The 'x-modules' not contain provided module: path '{$path}', method '{$method}', skipping...",
+                    );
 
                     continue;
                 }
@@ -54,7 +58,9 @@ class TsGenerator
                 $operationId = $info['operationId'];
 
                 if (! $operationId || str_contains($operationId, ':') || str_contains($operationId, '.')) {
-                    printWarning("Operation Id not exist or wrong format: path '{$path}', id '{$operationId}'");
+                    printWarning(
+                        "Operation Id not exist or wrong format: path '{$path}', id '{$operationId}', skipping...",
+                    );
 
                     continue;
                 }
@@ -62,7 +68,7 @@ class TsGenerator
                 $responseType = $this->getResponseType($data, array_shift($info['responses']));
 
                 if (!$responseType) {
-                    printWarning("Can't resolve response type for {$operationId}: '{$path}' {$method}");
+                    printWarning("Can't resolve response type for '{$operationId}': '{$path}' '{$method}'.");
                     $responseType = 'collection';
                 }
 
@@ -107,13 +113,15 @@ class TsGenerator
             $modelModule = $modelData['x-module'] ?? '';
 
             if (! $modelModule) {
-                printWarning('Model has no "x-module" property...');
+                printWarning("Model {$model} missing 'x-module' property, skipping...");
 
                 continue;
             }
 
             if ($module && $module !== $modelModule) {
-                printInfo("x-module not match with provided module: model {$model}, model module '{$modelModule}'");
+                printInfo(
+                    "The 'x-module' not match with provided module: model {$model}, model module '{$modelModule}', skipping...",
+                );
 
                 continue;
             }
@@ -123,10 +131,10 @@ class TsGenerator
             $properties = $modelData['properties']['attributes']['properties'] ?? [];
             $modelType = $modelData['properties']['type']['type'] ?? '';
 
-            $modelTypeValue = $modelData['properties']['type']['example'] ?? '';
+            $modelTypeValue = $modelData['properties']['type']['default'] ?? '';
 
             if (! $modelType || ! $modelTypeValue || ! $properties) {
-                printWarning('Model has no type, type value or properties...');
+                printWarning("Model {$model} missing type, skipping...");
 
                 continue;
             }
@@ -238,11 +246,11 @@ class TsGenerator
         $propertyType = '';
 
         if (isset($propertyInfo['type'])) {
-            $type = is_array($propertyInfo['type']) ? array_shift($propertyInfo['type']) : $propertyInfo['type'];
+            $type = is_array($propertyInfo['type']) ? $propertyInfo['type'][0] : $propertyInfo['type'];
             $typeConfigs = $this->config->getGenericTypes($type);
 
             if (! $typeConfigs) {
-                printAbort("Undefined property type '{$propertyInfo['type']}'. Please check config!");
+                printAbort("Undefined property type {$type}. Please check config!");
             }
 
             $propertyType = $typeConfigs;
