@@ -71,12 +71,12 @@ By default, it will use local server to get OAS specs.
 Use as follows:
 
 ```bash
-make generate.models M=users P=./modules/core
-make generate.api M=users P=./modules/core
+make generate.models M=users P=../modules/core
+make generate.api M=users P=../modules/core
 ```
 
 OR with custom OAS source:
 
 ```bash
-make generate.models M=users P=./modules/core OAS_SRC='https://host.docker.internal:8001/v2/swagger/source'
+make generate.models M=users P=../modules/core OAS_SRC='https://host.docker.internal:8001/v2/swagger/source'
 ```
