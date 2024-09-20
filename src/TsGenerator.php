@@ -246,14 +246,12 @@ class TsGenerator
         $propertyType = '';
 
         if (isset($propertyInfo['type'])) {
-            $type = is_array($propertyInfo['type']) ? $propertyInfo['type'][0] : $propertyInfo['type'];
-            $typeConfigs = $this->config->getGenericTypes($type);
+            $type = is_array($propertyInfo['type']) ? array_shift($propertyInfo['type']) : $propertyInfo['type'];
+            $propertyType = $this->config->getGenericTypes($type);
 
-            if (! $typeConfigs) {
-                printAbort("Undefined property type {$type}. Please check config!");
+            if (! $propertyType) {
+                printAbort("Undefined property type '{$type}'. Please check config!");
             }
-
-            $propertyType = $typeConfigs;
         } elseif (isset($propertyInfo['$ref'])) {
             $typeConfigs = $this->config->getGenericTypes('$ref');
 
