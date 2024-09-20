@@ -1,22 +1,82 @@
-# portal-entity-repository-generator
+# LK Portal Entity Generator
 
-### usage
-Run command to init configs before start using tool
+## Local installation
 
-set env variables to use without params
+* Clone repository
+* `touch .env`
+* `make build`
 
-`docker run -it --rm -v ./source:/app/source --env-file .env  -v ./output:/app/output portal-entity-repository-generator:latest`
+To debug and test tool inside the container use command
+```make bash```
 
-or provide it directly with command
+### Testing
 
-`docker run -it --rm -v ./source:/app/source --env-file .env  -v ./output:/app/output portal-entity-repository-generator:latest <source> <type> <output> <module>`
+To test final command usage locally you need:
 
-### Parameters:
-* Source - path to file or url with swagger source.
-  * In case using local file, put file to source directory and specify path to file like `source/oas.json`.
-  * In case using URL dont forget to cover it `https://host/v1/swagger/source`.
-* Type - type of generated models. Accepted values:
-  * api_operation_map;
-  * model;
-* Output - path that depend on its product or commercial structure. By default its "./output"
-* Module - module to apply filter by it
+* Run build with `make build`
+
+Temporary docker image will be built with name   
+```docker.io/library/peg-php-cli```.
+
+* Replace github docker image with local one in the `docker run` commands from
+"Usage" section.
+
+## Usage
+
+To take OAS specs from local instance you `host.docker.internal` 
+with port, instead of your domain.
+
+```
+docker run -it --rm \
+    -v ./output:/app/output \ 
+    -e PEG_OAS='https://host.docker.internal:8001/v2/swagger/source' \ 
+    -e PEG_OP=model \
+    -e PEG_MODULE=users \
+     docker.io/library/peg-php-cli
+```
+
+Available operations (`PEG_OP`):
+
+* `api_operation_map` Generate API operations map file for specified module.
+* `model` Generate model classes for specified module.
+
+### Simplify usage in project
+
+To simplify usage you may prepare makefile commands, like this:
+
+```makefile
+OAS_SRC ?= 'https://host.docker.internal:8001/v2/swagger/source'
+
+generate.models:
+	docker run -it --rm \
+		-v ${P}:/app/output  \
+		-e PEG_OAS=${OAS_SRC} \
+		-e PEG_OP=model \
+		-e PEG_MODULE=${M} \
+		docker.io/library/peg-php-cli;
+	sudo chown -R $$(whoami):$$(whoami) ${P}
+
+generate.api:
+	docker run -it --rm \
+		-v ${P}:/app/output  \
+		-e PEG_OAS=${OAS_SRC} \
+		-e PEG_OP=api_operation_map \
+		-e PEG_MODULE=${M} \
+		docker.io/library/peg-php-cli;
+	sudo chown -R $$(whoami):$$(whoami) ${P}
+```
+
+By default, it will use local server to get OAS specs.
+
+Use as follows:
+
+```bash
+make generate.models M=users P=./modules/core
+make generate.api M=users P=./modules/core
+```
+
+OR with custom OAS source:
+
+```bash
+make generate.models M=users P=./modules/core OAS_SRC='https://host.docker.internal:8001/v2/swagger/source'
+```

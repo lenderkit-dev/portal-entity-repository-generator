@@ -1,12 +1,12 @@
+name: peg
+
 services:
-  portal-entity-repository-generator:
-    image: portal-entity-repository-generator:latest
+  php-cli:
+    container_name: php-peg
+    build:
+      context: ./
     platform: linux/amd64
-    build: .
     env_file: ".env"
-    environment:
-      FOREGROUND_PROCESS: php-fpm
-      CONTAINER_ENABLED: 1
     volumes:
       - ./output:/app/output
       - ./source:/app/source
