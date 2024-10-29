@@ -4,40 +4,49 @@ declare(strict_types=1);
 
 return [
     'output_structure' => [
+        'base_models' => 'src/api/models/',
         'models' => 'src/models/',
-        'api_models_map' => 'src/api/',
+        'model_translations' => 'src/i18n/en/models/',
+        'api_models_map' => 'src/api/operations/',
     ],
     'filename' => [
-        'models_template' => '{entity}Model.ts',
-        'operation_map' => 'ApiOperationMap.ts',
+        'models_template' => '{entity}.ts',
+        'operation_map_template' => '{module}OperationsMap.ts',
     ],
     'filter_regex' => [
-        'models' => '/^.*Resource$/',
+        'models' => '/Resource$/',
     ],
     'generic_types' => [
         'boolean' => 'boolean',
-        'array' => 'Array',
-        'object' => 'object',
+        'array' => 'any[]',
+        'object' => 'Record<string, any>',
         'string' => 'string',
         'integer' => 'number',
         'number' => 'number',
         '$ref' => [
             'Date' => [
                 'ts_type' => 'Date',
-                'ts_import' => 'import type { Date } from \'@lk-core/model/component/Date\';',
+                'ts_import' => 'import type { Date } from \'@lk-framework/src/models\';',
             ],
             'DateTime' => [
                 'ts_type' => 'DateTime',
-                'ts_import' => 'import type { DateTime } from \'@lk-core/model/component/DateTime\';',
+                'ts_import' => 'import type { DateTime } from \'@lk-framework/src/models\';',
             ],
             'Money' => [
                 'ts_type' => 'Money',
-                'ts_import' => 'import type { Money } from \'@lk-core/model/component/Money\';',
+                'ts_import' => 'import type { Money } from \'@lk-framework/src/models\';',
             ],
             'Media' => [
                 'ts_type' => 'Media',
-                'ts_import' => 'import type { Media } from \'@lk-core/model/component/Media\';',
+                'ts_import' => 'import type { Media } from \'@lk-framework/src/models\';',
             ],
         ],
+    ],
+    'generic_types_defaults' => [
+        'boolean' => 'false',
+        'array' => '[]',
+        'string' => "''",
+        'number' => '0',
+        'object' => '{}',
     ],
 ];

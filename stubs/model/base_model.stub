@@ -1,0 +1,15 @@
+import { Model } from '@lk-framework/src/models';
+{additionalImport}
+
+abstract class {modelName} extends Model {
+  static type: {modelType} = '{modelTypeValue}';
+  type: {modelType} = '{modelTypeValue}';
+
+{properties}
+
+  constructor(config: any) {
+    super(config);
+
+    this.collectAttributes(config);
+  }
+}

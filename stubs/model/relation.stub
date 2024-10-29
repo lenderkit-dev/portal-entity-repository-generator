@@ -1,0 +1,3 @@
+  const {relation} = () => {
+     // TODO: get relation
+  }
