@@ -34,22 +34,22 @@ bash:
 	${DC_RUN} php-cli bash
 
 # default local path
-OAS_SRC ?= 'https://172.18.0.10:8001/v2/swagger/source'
+OAS_SRC ?= 'https://host.docker.internal:8001/v2/swagger/source'
 
-generate.models: build
+generate.models:
 	docker run -it --rm \
 		-v ${P}:/app/output  \
 		-e PEG_OAS=${OAS_SRC} \
 		-e PEG_OP=model \
 		-e PEG_MODULE=${M} \
-		docker.io/library/peg-php-cli
+		ghcr.io/lenderkit-dev/portal-entities-generator
 	sudo chown -R $$(whoami):$$(whoami) ${P}
 
-generate.api: build
+generate.api:
 	docker run -it --rm \
 		-v ${P}:/app/output  \
 		-e PEG_OAS=${OAS_SRC} \
 		-e PEG_OP=api_operation_map \
 		-e PEG_MODULE=${M} \
-		docker.io/library/peg-php-cli;
+		ghcr.io/lenderkit-dev/portal-entities-generator;
 	sudo chown -R $$(whoami):$$(whoami) ${P}
