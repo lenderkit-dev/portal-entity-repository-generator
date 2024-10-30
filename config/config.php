@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 return [
     'output_structure' => [
-        'base_models' => 'src/api/models/',
-        'models' => 'src/models/',
-        'model_translations' => 'src/i18n/en/models/',
-        'api_models_map' => 'src/api/operations/',
+        'base_models' => 'api/models/',
+        'models' => 'models/',
+        'model_translations' => 'i18n/en/models/',
+        'api_models_map' => 'api/operations/',
     ],
     'filename' => [
         'models_template' => '{entity}.ts',

@@ -124,7 +124,7 @@ class TsGenerator
     protected function getAlias(string $source): string
     {
         $modulePackageJson = json_decode(
-            file_exists("{$source}package.json") ? file_get_contents("{$source}package.json") : [],
+            file_exists("{$source}package.json") ? file_get_contents("{$source}package.json") : '',
             true,
         );
         $alias = $modulePackageJson['config']['alias'] ?? '';
