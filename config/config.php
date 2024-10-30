@@ -26,19 +26,19 @@ return [
         '$ref' => [
             'Date' => [
                 'ts_type' => 'Date',
-                'ts_import' => 'import type { Date } from \'@lk-framework/src/models\';',
+                'ts_import' => 'import type { DateAttribute } from \'@lk-framework/src/models\';',
             ],
             'DateTime' => [
                 'ts_type' => 'DateTime',
-                'ts_import' => 'import type { DateTime } from \'@lk-framework/src/models\';',
+                'ts_import' => 'import type { DateTimeAttribute } from \'@lk-framework/src/models\';',
             ],
             'Money' => [
                 'ts_type' => 'Money',
-                'ts_import' => 'import type { Money } from \'@lk-framework/src/models\';',
+                'ts_import' => 'import type { MoneyAttribute } from \'@lk-framework/src/models\';',
             ],
             'Media' => [
                 'ts_type' => 'Media',
-                'ts_import' => 'import type { Media } from \'@lk-framework/src/models\';',
+                'ts_import' => 'import type { MediaAttribute } from \'@lk-framework/src/models\';',
             ],
         ],
     ],
