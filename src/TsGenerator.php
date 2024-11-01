@@ -426,8 +426,7 @@ class TsGenerator
         $contentDefaults = '';
         $contentTemplate = match ($type) {
             static::GEN_TYPE_OPERATION => "import { {modelName} } from '@lk-{alias}/{path}{modelName}';",
-            static::GEN_TYPE_MODEL_BASE => "import * from '@lk-{alias}/{path}{modelName}';",
-            static::GEN_TYPE_MODEL => "export * from '@lk-{alias}/{path}{modelName}';",
+            static::GEN_TYPE_MODEL_BASE, static::GEN_TYPE_MODEL => "export * from '@lk-{alias}/{path}{modelName}';",
             static::GEN_TYPE_MODEL_TRANSLATION => "import { default as {modelName} } from '@lk-{alias}/{path}{modelName}';",
         };
 
