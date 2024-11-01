@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 return [
     'output_structure' => [
-        'base_models' => 'api/models/',
-        'models' => 'models/',
-        'model_translations' => 'i18n/en/models/',
-        'api_models_map' => 'api/operations/',
+        'model_base' => 'src/api/models/',
+        'model' => 'src/models/',
+        'model_translation' => 'src/i18n/en/models/',
+        'operation' => 'src/api/operations/',
     ],
     'filename' => [
         'models_template' => '{entity}.ts',
@@ -25,28 +25,26 @@ return [
         'number' => 'number',
         '$ref' => [
             'Date' => [
-                'ts_type' => 'Date',
+                'ts_type' => 'DateAttribute',
                 'ts_import' => 'import type { DateAttribute } from \'@lk-framework/src/models\';',
             ],
             'DateTime' => [
-                'ts_type' => 'DateTime',
+                'ts_type' => 'DateTimeAttribute',
                 'ts_import' => 'import type { DateTimeAttribute } from \'@lk-framework/src/models\';',
             ],
             'Money' => [
-                'ts_type' => 'Money',
+                'ts_type' => 'MoneyAttribute',
                 'ts_import' => 'import type { MoneyAttribute } from \'@lk-framework/src/models\';',
             ],
             'Media' => [
-                'ts_type' => 'Media',
+                'ts_type' => 'MediaAttribute',
                 'ts_import' => 'import type { MediaAttribute } from \'@lk-framework/src/models\';',
             ],
         ],
     ],
     'generic_types_defaults' => [
         'boolean' => 'false',
-        'array' => '[]',
         'string' => "''",
         'number' => '0',
-        'object' => '{}',
     ],
 ];

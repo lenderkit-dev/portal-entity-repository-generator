@@ -9,10 +9,19 @@ class TsGenerator
     public const OP_API_OPERATION_MAP = 'api_operation_map';
     public const OP_MODEL = 'model';
     public const OP_GENERAL = 'general';
+    public const GEN_TYPE_OPERATION = 'operation';
+    public const GEN_TYPE_MODEL_BASE = 'model_base';
+    public const GEN_TYPE_MODEL = 'model';
+    public const GEN_TYPE_MODEL_TRANSLATION = 'model_translation';
+
+    private string $alias;
 
     public function __construct(
         private Config $config,
-    ) {}
+        private string $output,
+    ) {
+        $this->alias = $this->getAlias($output);
+    }
 
     public static function allowedTypes(): array
     {
@@ -22,24 +31,19 @@ class TsGenerator
         ];
     }
 
-    public function generate(array $data, string $type, array $modules, string $output): void
+    public function generate(array $data, string $type, array $modules): void
     {
         match ($type) {
-            static::OP_API_OPERATION_MAP => $this->generateApiOperationMap($data, $modules, $output),
-            static::OP_MODEL => $this->generateModel($data, $modules, $output),
+            static::OP_API_OPERATION_MAP => $this->generateApiOperationMap($data, $modules),
+            static::OP_MODEL => $this->generateModel($data, $modules),
         };
     }
 
-    protected function generateApiOperationMap(array $data, array $modules, string $output): void
+    protected function generateApiOperationMap(array $data, array $modules): void
     {
         printInfo('Generating ApiOperationMap...');
 
-        $outputStructure = $this->config->getOutputStructure('api_models_map');
-        $directory = "{$output}{$outputStructure}";
-        $indexPath = "{$directory}index.ts";
-        $indexContent = '';
-        $indexDefaults = '';
-        $alias = $this->getAlias($output);
+        $outputStructure = $this->config->getOutputStructure(static::GEN_TYPE_OPERATION);
 
         foreach ($modules as $module) {
             printInfo("Generating ApiOperationMap for module '{$module}'");
@@ -95,30 +99,17 @@ class TsGenerator
 
             $moduleName = $this->toCamelCase($module);
             $filename = str_replace('{module}', $moduleName, $this->config->getFilename('operation_map_template'));
-            $name = str_replace('.ts', '', $filename);
             $content = strtr(file_get_contents('stubs/api_operation_map/api_operation_map.stub'), [
                 '{operationMapItems}' => $operationItems,
-                '{operationMapItemsName}' => $name,
+                '{operationMapItemsName}' => basename($filename, '.ts'),
             ]);
-            $path = "{$directory}{$filename}";
+            $path = "{$this->output}{$outputStructure}{$filename}";
             $this->saveFile($path, $content);
 
             printSuccess("ApiOperationMap has been generated to '{$path}'.");
-
-            $indexContent .= strtr("import { {moduleOperationMap} } from '@lk-{alias}/{path}{moduleOperationMap}';", [
-                '{alias}' => $alias,
-                '{path}' => $outputStructure,
-                '{moduleOperationMap}' => $name,
-            ]) . PHP_EOL;
-            $indexDefaults .= "  ...{$name}," . PHP_EOL;
         }
 
-        $indexContent .= strtr(file_get_contents('stubs/index_defaults.stub'), [
-            '{defaults}' => rtrim($indexDefaults),
-        ]);
-
-        $this->saveFile($indexPath, $indexContent);
-        printSuccess('ApiOperationMap index has been updated.');
+        $this->generateIndex(static::GEN_TYPE_OPERATION);
     }
 
     protected function getAlias(string $source): string
@@ -136,11 +127,9 @@ class TsGenerator
         return $alias;
     }
 
-    protected function generateModel(array $data, array $modules, string $output): void
+    protected function generateModel(array $data, array $modules): void
     {
         printInfo('Generating models...');
-
-        $alias = $this->getAlias($output);
 
         $models = array_filter(
             $data['components']['schemas'] ?? [],
@@ -148,22 +137,9 @@ class TsGenerator
             ARRAY_FILTER_USE_KEY,
         );
         $genericTypesDefaults = $this->config->getGenericTypesDefaults();
-
-        $baseModelOutputStructure = $this->config->getOutputStructure('base_models');
-        $baseModelDirectory = "{$output}{$baseModelOutputStructure}";
-        $baseModelIndexPath = "{$baseModelDirectory}index.ts";
-        $baseModelIndexContent = '';
-
-        $mainModelOutputStructure = $this->config->getOutputStructure('models');
-        $mainModelDirectory = "{$output}{$mainModelOutputStructure}";
-        $mainModelIndexPath = "{$mainModelDirectory}index.ts";
-        $mainModelIndexContent = '';
-
-        $translateModelOutputStructure = $this->config->getOutputStructure('model_translations');
-        $translateModelDirectory = "{$output}{$translateModelOutputStructure}";
-        $translateModelIndexPath = "{$translateModelDirectory}index.ts";
-        $translateModelIndexContent = '';
-        $translateModelIndexDefaults = '';
+        $baseModelOutputStructure = $this->config->getOutputStructure(static::GEN_TYPE_MODEL_BASE);
+        $mainModelOutputStructure = $this->config->getOutputStructure(static::GEN_TYPE_MODEL);
+        $translateModelOutputStructure = $this->config->getOutputStructure(static::GEN_TYPE_MODEL_TRANSLATION);
 
         foreach ($models as $model => $modelData) {
             printInfo("Generating model {$model}...");
@@ -213,6 +189,7 @@ class TsGenerator
 
                 [$propertyType, $addImport] = $this->getPropertyType($propertyInfo);
                 $additionalImport = array_merge($additionalImport, $addImport);
+                $required = in_array($propertyName, $requiredProperties);
 
                 if (isset($propertyInfo['default'])) {
                     $defaultValue = 'string' === $propertyType
@@ -220,50 +197,38 @@ class TsGenerator
                         : $propertyInfo['default'];
                 } else {
                     if (array_key_exists($propertyType, $genericTypesDefaults)) {
-                        $defaultValue = ! in_array($propertyName, $requiredProperties) ? $genericTypesDefaults[$propertyType] : '';
+                        $defaultValue = ! $required ? $genericTypesDefaults[$propertyType] : '';
                     } else {
-                        $defaultValue = in_array($propertyName, $requiredProperties) ? '' : 'null';
+                        $defaultValue = ! $required ? 'null' : '';
                     }
                 }
+                $nullable = ! $required && ($defaultValue === '' || $defaultValue === 'null');
 
-                $additionalProperties .= strtr(
-                    file_get_contents('stubs/model/model_property.stub'),
-                    [
-                        '{name}' => isset($propertyInfo['default']) ? $propertyName : "{$propertyName}!",
-                        '{type}' => $propertyType,
-                        '{nullable}' => in_array($propertyName, $requiredProperties) ? '' : ' | null',
-                        '{default}' => $defaultValue !== '' ? " = {$defaultValue}" : '',
-                    ],
-                );
+                $additionalProperties .= strtr(file_get_contents('stubs/model/model_property.stub'), [
+                    '{name}' => $required && $defaultValue === '' ? "{$propertyName}!" : $propertyName,
+                    '{type}' => $propertyType,
+                    '{nullable}' => $nullable ? ' | null' : '',
+                    '{default}' => $defaultValue !== '' ? " = {$defaultValue}" : '',
+                ]);
             }
 
             $modelName = preg_replace($this->config->getFilterRegex('models'), '', $model);
-
-            $baseModelContent = strtr(
-                file_get_contents('stubs/model/base_model.stub'),
-                [
-                    '{additionalImport}' => implode(PHP_EOL, $additionalImport),
-                    '{modelName}' => $modelName,
-                    '{modelType}' => $modelType,
-                    '{modelTypeValue}' => $modelTypeValue,
-                    '{properties}' => $additionalProperties,
-                ],
-            );
+            $baseModelContent = strtr(file_get_contents('stubs/model/base_model.stub'), [
+                '{additionalImport}' => implode(PHP_EOL, $additionalImport),
+                '{modelName}' => $modelName,
+                '{modelType}' => $modelType,
+                '{modelTypeValue}' => $modelTypeValue,
+                '{properties}' => $additionalProperties,
+            ]);
 
             $filename = str_replace(
                 '{entity}',
                 $modelName,
                 $this->config->getFilename('models_template'),
             );
-            $baseModelPath = "{$baseModelDirectory}{$filename}";
+            $baseModelPath = "{$this->output}{$baseModelOutputStructure}{$filename}";
             $this->saveFile($baseModelPath, $baseModelContent);
             printSuccess("Base model has been generated to '{$baseModelPath}'.");
-
-            $baseModelIndexContent .= strtr("import * from '@lk-{alias}/{path}{modelName}';", [
-                '{alias}' => $alias,
-                '{path}' => $baseModelOutputStructure,
-                '{modelName}' => $modelName,
-            ]) . PHP_EOL;
 
             // Main model
             $relations = $modelData['properties']['relationships']['properties'] ?? [];
@@ -271,26 +236,20 @@ class TsGenerator
 
             foreach ($relations as $relationKey => $relation) {
                 $relationType = $relation['properties']['data']['type'];
-                $relationsContent .= strtr(
-                    file_get_contents('stubs/model/relation.stub'),
-                    [
-                        '{relation}' => $this->toCamelCase($relationKey, '_'),
-                        '{relationType}' => $relationType === 'object' ? 'Model' : 'Model[]',
-                    ],
-                );
+                $relationsContent .= strtr(file_get_contents('stubs/model/relation.stub'), [
+                    '{relation}' => $this->toCamelCase($relationKey, '_'),
+                    '{relationType}' => $relationType === 'object' ? 'Model' : 'Model[]',
+                ]);
             }
 
-            $mainModelContent = strtr(
-                file_get_contents('stubs/model/model.stub'),
-                [
-                    '{modelName}' => $modelName,
-                    '{alias}' => $alias,
-                    '{path}' => $baseModelOutputStructure,
-                    '{relations}' => rtrim($relationsContent),
-                ],
-            );
+            $mainModelContent = strtr(file_get_contents('stubs/model/model.stub'), [
+                '{modelName}' => $modelName,
+                '{alias}' => $this->alias,
+                '{path}' => $baseModelOutputStructure,
+                '{relations}' => rtrim($relationsContent),
+            ]);
 
-            $mainModelPath = "{$mainModelDirectory}{$filename}";
+            $mainModelPath = "{$this->output}{$mainModelOutputStructure}{$filename}";
 
             if (! file_exists($mainModelPath)) {
                 $this->saveFile($mainModelPath, $mainModelContent);
@@ -298,12 +257,6 @@ class TsGenerator
             } else {
                 printWarning("Model already exist '{$mainModelPath}'.");
             }
-
-            $mainModelIndexContent .= strtr("import * from '@lk-{alias}/{path}{modelName}';", [
-                '{alias}' => $alias,
-                '{path}' => $mainModelOutputStructure,
-                '{modelName}' => $modelName,
-            ]) . PHP_EOL;
 
             // translate model
             $enumsContent = '';
@@ -316,32 +269,23 @@ class TsGenerator
                         continue;
                     }
 
-                    $attributeElements .= strtr(
-                        file_get_contents('stubs/model/translation_attribute_element.stub'),
-                        [
-                            '{value}' => $value,
-                            '{title}' => ucfirst(str_replace('_', ' ', $value)),
-                        ],
-                    );
+                    $attributeElements .= strtr(file_get_contents('stubs/model/translation_attribute_item.stub'), [
+                        '{value}' => $value,
+                        '{title}' => ucfirst(str_replace('_', ' ', $value)),
+                    ]);
                 }
 
-                $enumsContent .= strtr(
-                    file_get_contents('stubs/model/translation_attribute.stub'),
-                    [
-                        '{attributeTitle}' => $propertyName,
-                        '{attributeElements}' => rtrim($attributeElements),
-                    ],
-                );
+                $enumsContent .= strtr(file_get_contents('stubs/model/translation_attribute.stub'), [
+                    '{attributeTitle}' => $propertyName,
+                    '{attributeElements}' => rtrim($attributeElements),
+                ]);
             }
 
-            $translateModelContent = strtr(
-                file_get_contents('stubs/model/model_translations.stub'),
-                [
-                    '{translations}' => rtrim($enumsContent),
-                ],
-            );
+            $translateModelContent = strtr(file_get_contents('stubs/model/model_translations.stub'), [
+                '{translations}' => rtrim($enumsContent),
+            ]);
 
-            $translateModelPath = "{$translateModelDirectory}{$filename}";
+            $translateModelPath = "{$this->output}{$translateModelOutputStructure}{$filename}";
 
             if (! file_exists($translateModelPath)) {
                 $this->saveFile($translateModelPath, $translateModelContent);
@@ -349,28 +293,11 @@ class TsGenerator
             } else {
                 printWarning("Model translations already exist '{$translateModelPath}'.");
             }
-
-            $translateModelIndexContent .= strtr("import { default as {modelName} } from '@lk-{alias}/{path}{modelName}';", [
-                '{alias}' => $alias,
-                '{path}' => $translateModelOutputStructure,
-                '{modelName}' => $modelName,
-            ]) . PHP_EOL;
-            $translateModelIndexDefaults .= "  {$modelName}," . PHP_EOL;
         }
 
-        $this->saveFile($baseModelIndexPath, $baseModelIndexContent);
-        printSuccess('Base model index has been updated.');
-
-        $this->saveFile($mainModelIndexPath, $mainModelIndexContent);
-        printSuccess('Model index has been updated.');
-
-
-        $translateModelIndexContent .= strtr(file_get_contents('stubs/index_defaults.stub'), [
-            '{defaults}' => rtrim($translateModelIndexDefaults),
-        ]);
-
-        $this->saveFile($translateModelIndexPath, $translateModelIndexContent);
-        printSuccess('Model translations index has been updated.');
+        $this->generateIndex(static::GEN_TYPE_MODEL_BASE);
+        $this->generateIndex(static::GEN_TYPE_MODEL);
+        $this->generateIndex(static::GEN_TYPE_MODEL_TRANSLATION);
     }
 
     protected function toCamelCase(string $string, string $separator = '-'): string
@@ -453,13 +380,14 @@ class TsGenerator
             $typeConfigs = $this->config->getGenericTypes('$ref');
 
             $pos = strrpos($propertyInfo['$ref'], '/');
-            $propertyType = $pos !== false ? substr($propertyInfo['$ref'], $pos + 1) : $propertyInfo['$ref'];
+            $type = $pos !== false ? substr($propertyInfo['$ref'], $pos + 1) : $propertyInfo['$ref'];
 
-            if (! isset($typeConfigs[$propertyType])) {
-                printAbort("Undefined \$ref '{$propertyType}'. Please check config!");
+            if (! isset($typeConfigs[$type])) {
+                printAbort("Undefined \$ref '{$type}'. Please check config!");
             }
 
-            $additionalImport[$propertyType] = $typeConfigs[$propertyType]['ts_import'];
+            $propertyType = $typeConfigs[$type]['ts_type'];
+            $additionalImport[$propertyType] = $typeConfigs[$type]['ts_import'];
         } elseif (isset($propertyInfo['anyOf'])) {
             foreach ($propertyInfo['anyOf'] as $key => $anyOf) {
                 if ($anyOf === 'null') {
@@ -477,6 +405,53 @@ class TsGenerator
         }
 
         return [$propertyType, $additionalImport];
+    }
+
+    protected function generateIndex(string $type): void
+    {
+        $outputStructure = $this->config->getOutputStructure($type);
+        $directory = "{$this->output}{$outputStructure}";
+        $files = scandir($directory);
+        $indexPath = "{$directory}index.ts";
+        $models = array_map(
+            static fn($file): string => basename($file, '.ts'),
+            array_filter($files, static fn($file): bool => ! in_array($file, [
+                '.',
+                '..',
+                'index.ts',
+            ])),
+        );
+
+        $content = '';
+        $contentDefaults = '';
+        $contentTemplate = match ($type) {
+            static::GEN_TYPE_OPERATION => "import { {modelName} } from '@lk-{alias}/{path}{modelName}';",
+            static::GEN_TYPE_MODEL_BASE => "import * from '@lk-{alias}/{path}{modelName}';",
+            static::GEN_TYPE_MODEL => "export * from '@lk-{alias}/{path}{modelName}';",
+            static::GEN_TYPE_MODEL_TRANSLATION => "import { default as {modelName} } from '@lk-{alias}/{path}{modelName}';",
+        };
+
+        foreach ($models as $model) {
+            $content .= strtr($contentTemplate, [
+                '{alias}' => $this->alias,
+                '{path}' => $outputStructure,
+                '{modelName}' => $model,
+            ]) . PHP_EOL;
+            $contentDefaults .= match ($type) {
+                static::GEN_TYPE_OPERATION => "  ...{$model}," . PHP_EOL,
+                static::GEN_TYPE_MODEL_TRANSLATION => "  {$model}," . PHP_EOL,
+                default => '',
+            };
+        }
+
+        if ($contentDefaults) {
+            $content .= strtr(file_get_contents('stubs/index_defaults.stub'), [
+                '{defaults}' => rtrim($contentDefaults),
+            ]);
+        }
+
+        $this->saveFile($indexPath, $content);
+        printSuccess("Index has been generated in '{$indexPath}'.");
     }
 
     protected function saveFile(string $path, string $data): void
