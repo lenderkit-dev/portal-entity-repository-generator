@@ -10,6 +10,8 @@ class Config
 
     private array $generic_types;
 
+    private array $generic_types_defaults;
+
     private array $filter_regex;
 
     private array $filename;
@@ -22,6 +24,7 @@ class Config
         );
 
         $this->generic_types = $configs['generic_types'];
+        $this->generic_types_defaults = $configs['generic_types_defaults'];
         $this->filter_regex = $configs['filter_regex'];
         $this->filename = $configs['filename'];
     }
@@ -34,6 +37,11 @@ class Config
     public function getGenericTypes(string $type): array|string
     {
         return $this->generic_types[$type] ?? [];
+    }
+
+    public function getGenericTypesDefaults(): array
+    {
+        return $this->generic_types_defaults ?? [];
     }
 
     public function getFilterRegex(string $type): string
