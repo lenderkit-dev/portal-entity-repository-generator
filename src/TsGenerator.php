@@ -246,6 +246,7 @@ class TsGenerator
                 '{modelName}' => $modelName,
                 '{alias}' => $this->alias,
                 '{path}' => $baseModelOutputStructure,
+                '{importModel}' => $relationsContent ? "import { Model } from '@lk-framework/src/models';" : '',
                 '{relations}' => rtrim($relationsContent),
             ]);
 

@@ -1,5 +1,5 @@
 import { {modelName} as Base{modelName} } from '@lk-{alias}/{path}{modelName}';
-import { Model } from '@lk-framework/src/models';
+{importModel}
 
 export class {modelName} extends Base{modelName} {
 {relations}
