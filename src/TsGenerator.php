@@ -189,26 +189,22 @@ class TsGenerator
 
                 [$propertyType, $addImport] = $this->getPropertyType($propertyInfo);
                 $additionalImport = array_merge($additionalImport, $addImport);
-                $required = in_array($propertyName, $requiredProperties);
 
                 if (isset($propertyInfo['default'])) {
                     $defaultValue = 'string' === $propertyType
                         ? "'{$propertyInfo['default']}'"
                         : $propertyInfo['default'];
                 } else {
-                    if (array_key_exists($propertyType, $genericTypesDefaults)) {
-                        $defaultValue = ! $required ? $genericTypesDefaults[$propertyType] : '';
-                    } else {
-                        $defaultValue = ! $required ? 'null' : '';
-                    }
+                    $defaultValue = array_key_exists($propertyType, $genericTypesDefaults)
+                        ? $genericTypesDefaults[$propertyType] : 'null';
                 }
-                $nullable = ! $required && ($defaultValue === '' || $defaultValue === 'null');
 
                 $additionalProperties .= strtr(file_get_contents('stubs/model/model_property.stub'), [
-                    '{name}' => $required && $defaultValue === '' ? "{$propertyName}!" : $propertyName,
+                    '{name}' => $propertyName,
                     '{type}' => $propertyType,
-                    '{nullable}' => $nullable ? ' | null' : '',
-                    '{default}' => $defaultValue !== '' ? " = {$defaultValue}" : '',
+                    '{nullable}' => ! in_array($propertyName, $requiredProperties) || $defaultValue === 'null'
+                        ? ' | null' : '',
+                    '{default}' => " = {$defaultValue}",
                 ]);
             }
 
