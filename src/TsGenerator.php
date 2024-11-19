@@ -177,14 +177,12 @@ class TsGenerator
             $enums = [];
 
             foreach ($properties as $propertyName => $propertyInfo) {
-                if (isset($propertyInfo['enum'])) {
-                    $enums[$propertyName] = $propertyInfo['enum'];
-
-                    continue;
-                }
 
                 if (! isset($propertyInfo['x-module']) || $propertyInfo['x-module'] !== $modelModule) {
                     continue;
+                }
+                if (isset($propertyInfo['enum'])) {
+                    $enums[$propertyName] = $propertyInfo['enum'];
                 }
 
                 [$propertyType, $addImport] = $this->getPropertyType($propertyInfo);
