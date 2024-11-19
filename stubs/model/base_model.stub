@@ -1,4 +1,4 @@
-import { Model } from '@lk-framework/src/models';
+import { Model } from '@lk-framework/src/models/Model';
 {additionalImport}
 
 export abstract class {modelName} extends Model {
