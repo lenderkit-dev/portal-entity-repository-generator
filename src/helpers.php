@@ -47,3 +47,23 @@ function formatMessage(string $color, string $message): string
 {
     return "{$color}{$message}" . ANSI_RESET . PHP_EOL;
 }
+
+function pluralToSingular(string $word): string
+{
+    return match (true) {
+        preg_match('/(ies)$/i', $word) === 1 => preg_replace('/(ies)$/i', 'y', $word),
+        preg_match('/(es)$/i', $word) === 1 => preg_replace('/(es)$/i', '', $word),
+        preg_match('/(s)$/i', $word) === 1 => preg_replace('/(s)$/i', '', $word),
+        default => $word,
+    };
+}
+
+function toCamelCase(string $string, string $separator = '-'): string
+{
+    return lcfirst(toPascalCase($string, $separator));
+}
+
+function toPascalCase(string $string, string $separator = '-'): string
+{
+    return implode('', array_map('ucfirst', explode($separator, $string)));
+}
