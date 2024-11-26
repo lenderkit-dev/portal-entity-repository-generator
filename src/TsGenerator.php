@@ -233,8 +233,14 @@ class TsGenerator
                 $relationModel = match (true) {
                     isset($relation['properties']['data']['items']['properties']['type']['default']) => $relation['properties']['data']['items']['properties']['type']['default'],
                     isset($relation['properties']['data']['properties']['type']['default']) => $relation['properties']['data']['properties']['type']['default'],
-                    default => $relationKey,
+                    default => null,
                 };
+
+                // skip morph relations
+                if (!$relationModel) {
+                    continue;
+                }
+
                 $relationsContent .= strtr(file_get_contents('stubs/model/relation.stub'), [
                     '{relation}' => $relationKey,
                     '{relationMethod}' => toCamelCase($relationKey, '_'),
