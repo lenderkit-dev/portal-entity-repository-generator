@@ -247,7 +247,7 @@ class TsGenerator
                     '{relationType}' => $isMultipleRelation ? 'Relations' : 'Relation',
                     '{relationModel}' => toPascalCase(pluralToSingular($relationModel), '_'),
                     '{relationId}' => pluralToSingular($relationModel) . '_id',
-                ]);
+                ]) . PHP_EOL;
             }
 
             $mainModelContent = strtr(file_get_contents('stubs/model/model.stub'), [

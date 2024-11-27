@@ -36,20 +36,20 @@ bash:
 # default local path
 OAS_SRC ?= 'https://api.lktest.hds108.jcdev.net/v2/swagger/source'
 
-generate.models:
+generate.models: build
 	docker run -it --rm \
 		-v ${P}:/app/output  \
 		-e PEG_OAS=${OAS_SRC} \
 		-e PEG_OP=model \
 		-e PEG_MODULE=${M} \
-		ghcr.io/lenderkit-dev/portal-entities-generator
+		docker.io/library/peg-php-cli
 	sudo chown -R $$(whoami):$$(whoami) ${P}
 
-generate.api:
+generate.api: build
 	docker run -it --rm \
 		-v ${P}:/app/output  \
 		-e PEG_OAS=${OAS_SRC} \
 		-e PEG_OP=api_operation_map \
 		-e PEG_MODULE=${M} \
-		ghcr.io/lenderkit-dev/portal-entities-generator;
+		docker.io/library/peg-php-cli
 	sudo chown -R $$(whoami):$$(whoami) ${P}

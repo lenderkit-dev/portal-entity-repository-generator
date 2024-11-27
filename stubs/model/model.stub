@@ -3,10 +3,10 @@ import { {modelName} as Base{modelName} } from '@lk-{alias}/{path}{modelName}';
 export class {modelName} extends Base{modelName} {
 {relations}
 
-// TODO: uncomment constructor in case you have custom properties or delete it
-// constructor(config: any) {
-//   super(config);
-//
-//   this.collectAttributes(config);
-// }
+  // TODO: uncomment constructor in case you have custom properties or delete it
+  // constructor(config: any) {
+  //   super(config);
+  //
+  //   this.collectAttributes(config);
+  // }
 }

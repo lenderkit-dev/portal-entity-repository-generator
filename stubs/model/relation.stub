@@ -1,14 +1,14 @@
-// public async {relationMethod}() {
-//   // TODO: update repository in case you have specific model repository
-//   const repository = useIncludesRepository({
-//     model: {relationModel},
-//   });
-//
-//   const result = await this.get{relationType}<{relationModel}>(
-//     '{relation}',
-//     repository.included,
-//     '{relationId}',
-//   );
-//
-//   return result;
-// }
+  // public async {relationMethod}() {
+  //   // TODO: update repository in case you have specific model repository
+  //   const repository = useIncludesRepository({
+  //     model: {relationModel},
+  //   });
+  //
+  //   const result = await this.get{relationType}<{relationModel}>(
+  //     '{relation}',
+  //     repository.included,
+  //     '{relationId}',
+  //   );
+  //
+  //   return result;
+  // }
