@@ -230,23 +230,25 @@ class TsGenerator
 
             foreach ($relations as $relationKey => $relation) {
                 $isMultipleRelation = $relation['properties']['data']['type'] !== 'object';
-                $relationModel = match (true) {
+                $relationType = match (true) {
                     isset($relation['properties']['data']['items']['properties']['type']['default']) => $relation['properties']['data']['items']['properties']['type']['default'],
                     isset($relation['properties']['data']['properties']['type']['default']) => $relation['properties']['data']['properties']['type']['default'],
                     default => null,
                 };
 
                 // skip morph relations
-                if (!$relationModel) {
+                if (!$relationType) {
                     continue;
                 }
 
+                $relationType = pluralToSingular($relationType);
+
                 $relationsContent .= strtr(file_get_contents('stubs/model/relation.stub'), [
                     '{relation}' => $relationKey,
-                    '{relationMethod}' => toCamelCase($relationKey, '_'),
+                    '{relationMethod}' => toCamelCase($relationKey),
                     '{relationType}' => $isMultipleRelation ? 'Relations' : 'Relation',
-                    '{relationModel}' => toPascalCase(pluralToSingular($relationModel), '_'),
-                    '{relationId}' => pluralToSingular($relationModel) . '_id',
+                    '{relationModel}' => toPascalCase($relationType),
+                    '{relationId}' => "{$relationType}_id",
                 ]) . PHP_EOL;
             }
 

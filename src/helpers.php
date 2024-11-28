@@ -58,12 +58,12 @@ function pluralToSingular(string $word): string
     };
 }
 
-function toCamelCase(string $string, string $separator = '-'): string
+function toCamelCase(string $string, string $separator = '_'): string
 {
     return lcfirst(toPascalCase($string, $separator));
 }
 
-function toPascalCase(string $string, string $separator = '-'): string
+function toPascalCase(string $string, string $separator = '_'): string
 {
     return implode('', array_map('ucfirst', explode($separator, $string)));
 }
