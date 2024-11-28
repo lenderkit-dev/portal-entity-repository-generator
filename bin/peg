@@ -18,13 +18,15 @@ if (isset($argv[1]) && isset($argv[2])) {
     $source = $argv[1] ?? '';
     $type = $argv[2] ?? '';
     $output = $argv[3] ?? './output';
-    $module = $argv[4] ?? '';
+    $moduleInput = $argv[4] ?? '';
 } else {
     $source = getenv('PEG_OAS');
     $type = getenv('PEG_OP');
-    $module = getenv('PEG_MODULE') ?: '';
+    $moduleInput = getenv('PEG_MODULE') ?: '';
     $output = getenv('PEG_OUTPUT') ?: './output';
 }
+
+$modules = array_filter(explode(',', $moduleInput));
 
 if (! $source || ! $type || ! in_array($type, TsGenerator::allowedTypes())) {
     printAbort('Please check your command parameters. Parameters could be set through .env file or directly with command.');
@@ -39,12 +41,12 @@ printInfo('Complete reading source.');
 
 $output = str_ends_with($output, '/') ? $output : "{$output}/";
 
-$generator = new TsGenerator(new Config($config));
+$generator = new TsGenerator(new Config($config), $output);
 printInfo('Generating files...');
 
-if ($module) {
-    printInfo("Apply filter by module {$module}...");
+if ($moduleInput) {
+    printInfo("Apply filter by modules: {$moduleInput}...");
 }
 
-$generator->generate($data, $type, $module, $output);
+$generator->generate($data, $type, $modules);
 printSuccess('Script completed.');

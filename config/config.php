@@ -4,40 +4,47 @@ declare(strict_types=1);
 
 return [
     'output_structure' => [
-        'models' => 'src/models/',
-        'api_models_map' => 'src/api/',
+        'model_base' => 'src/api/models/',
+        'model' => 'src/models/',
+        'model_translation' => 'src/i18n/en/models/',
+        'operation' => 'src/api/operations/',
     ],
     'filename' => [
-        'models_template' => '{entity}Model.ts',
-        'operation_map' => 'ApiOperationMap.ts',
+        'models_template' => '{entity}.ts',
+        'operation_map_template' => '{module}OperationsMap.ts',
     ],
     'filter_regex' => [
-        'models' => '/^.*Resource$/',
+        'models' => '/Resource$/',
     ],
     'generic_types' => [
         'boolean' => 'boolean',
-        'array' => 'Array',
-        'object' => 'object',
+        'array' => 'any[]',
+        'object' => 'Record<string, any>',
         'string' => 'string',
         'integer' => 'number',
         'number' => 'number',
         '$ref' => [
             'Date' => [
-                'ts_type' => 'Date',
-                'ts_import' => 'import type { Date } from \'@lk-core/model/component/Date\';',
+                'ts_type' => 'DateAttribute',
+                'ts_import' => 'import type { DateAttribute } from \'@lk-framework/src/models/types\';',
             ],
             'DateTime' => [
-                'ts_type' => 'DateTime',
-                'ts_import' => 'import type { DateTime } from \'@lk-core/model/component/DateTime\';',
+                'ts_type' => 'DateTimeAttribute',
+                'ts_import' => 'import type { DateTimeAttribute } from \'@lk-framework/src/models/types\';',
             ],
             'Money' => [
-                'ts_type' => 'Money',
-                'ts_import' => 'import type { Money } from \'@lk-core/model/component/Money\';',
+                'ts_type' => 'MoneyAttribute',
+                'ts_import' => 'import type { MoneyAttribute } from \'@lk-framework/src/models/types\';',
             ],
             'Media' => [
-                'ts_type' => 'Media',
-                'ts_import' => 'import type { Media } from \'@lk-core/model/component/Media\';',
+                'ts_type' => 'MediaAttribute',
+                'ts_import' => 'import type { MediaAttribute } from \'@lk-framework/src/models/types\';',
             ],
         ],
+    ],
+    'generic_types_defaults' => [
+        'boolean' => 'false',
+        'string' => "''",
+        'number' => '0',
     ],
 ];
