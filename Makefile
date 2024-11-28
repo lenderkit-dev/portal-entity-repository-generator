@@ -34,7 +34,7 @@ bash:
 	${DC_RUN} php-cli bash
 
 # default local path
-OAS_SRC ?= 'https://host.docker.internal:8001/v2/swagger/source'
+OAS_SRC ?= 'https://api.lktest.hds108.jcdev.net/v2/swagger/source'
 
 generate.models:
 	docker run -it --rm \

@@ -1,5 +1,5 @@
-    {operationId}: {
-        url: "{url}",
-        method: "{method}",
-        responseType: '{responseType}'
-    },
+  {operationId}: {
+    url: "{url}",
+    method: "{method}",
+    responseType: '{responseType}'
+  },
