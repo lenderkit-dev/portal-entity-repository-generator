@@ -1,0 +1,4 @@
+import { useIncludesRepository } from '@lk-framework/src/repositories/IncludesRepository';
+
+// TODO: import relation models correctly
+// import { RelationModel } from '@lk-{{alias}}/src/models/RelationModel';

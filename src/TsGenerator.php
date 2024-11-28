@@ -97,7 +97,7 @@ class TsGenerator
                 }
             }
 
-            $moduleName = $this->toCamelCase($module);
+            $moduleName = toCamelCase($module);
             $filename = str_replace('{module}', $moduleName, $this->config->getFilename('operation_map_template'));
             $content = strtr(file_get_contents('stubs/api_operation_map/api_operation_map.stub'), [
                 '{operationMapItems}' => $operationItems,
@@ -208,11 +208,11 @@ class TsGenerator
 
             $modelName = preg_replace($this->config->getFilterRegex('models'), '', $model);
             $baseModelContent = strtr(file_get_contents('stubs/model/base_model.stub'), [
-                '{additionalImport}' => implode(PHP_EOL, $additionalImport),
+                '{additionalImport}' => $additionalImport ? implode(PHP_EOL, $additionalImport) . PHP_EOL : '',
                 '{modelName}' => $modelName,
                 '{modelType}' => $modelType,
                 '{modelTypeValue}' => $modelTypeValue,
-                '{properties}' => $additionalProperties,
+                '{properties}' => rtrim($additionalProperties),
             ]);
 
             $filename = str_replace(
@@ -229,18 +229,34 @@ class TsGenerator
             $relationsContent = '';
 
             foreach ($relations as $relationKey => $relation) {
-                $relationType = $relation['properties']['data']['type'];
+                $isMultipleRelation = $relation['properties']['data']['type'] !== 'object';
+                $relationType = match (true) {
+                    isset($relation['properties']['data']['items']['properties']['type']['default']) => $relation['properties']['data']['items']['properties']['type']['default'],
+                    isset($relation['properties']['data']['properties']['type']['default']) => $relation['properties']['data']['properties']['type']['default'],
+                    default => null,
+                };
+
+                // skip morph relations
+                if (!$relationType) {
+                    continue;
+                }
+
+                $relationType = pluralToSingular($relationType);
+
                 $relationsContent .= strtr(file_get_contents('stubs/model/relation.stub'), [
-                    '{relation}' => $this->toCamelCase($relationKey, '_'),
-                    '{relationType}' => $relationType === 'object' ? 'Model' : 'Model[]',
-                ]);
+                    '{relation}' => $relationKey,
+                    '{relationMethod}' => toCamelCase($relationKey),
+                    '{relationType}' => $isMultipleRelation ? 'Relations' : 'Relation',
+                    '{relationModel}' => toPascalCase($relationType),
+                    '{relationId}' => "{$relationType}_id",
+                ]) . PHP_EOL;
             }
 
             $mainModelContent = strtr(file_get_contents('stubs/model/model.stub'), [
                 '{modelName}' => $modelName,
                 '{alias}' => $this->alias,
                 '{path}' => $baseModelOutputStructure,
-                '{importModel}' => $relationsContent ? "import { Model } from '@lk-framework/src/models';" : '',
+                '{importModel}' => $relationsContent ? file_get_contents('stubs/model/model_import.stub') : '',
                 '{relations}' => rtrim($relationsContent),
             ]);
 
@@ -293,11 +309,6 @@ class TsGenerator
         $this->generateIndex(static::GEN_TYPE_MODEL_BASE);
         $this->generateIndex(static::GEN_TYPE_MODEL);
         $this->generateIndex(static::GEN_TYPE_MODEL_TRANSLATION);
-    }
-
-    protected function toCamelCase(string $string, string $separator = '-'): string
-    {
-        return lcfirst(implode('', array_map('ucfirst', explode($separator, $string))));
     }
 
     protected function getResponseType(array $data, string|array $response): string
