@@ -1,1 +1,1 @@
-    {name}: {type}{nullable} = {default};
+  {name}: {type}{nullable}{default};
