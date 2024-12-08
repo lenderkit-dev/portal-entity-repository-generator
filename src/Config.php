@@ -12,6 +12,8 @@ class Config
 
     private array $generic_types_defaults;
 
+    private array $not_nullable_types;
+
     private array $filter_regex;
 
     private array $filename;
@@ -25,6 +27,7 @@ class Config
 
         $this->generic_types = $configs['generic_types'];
         $this->generic_types_defaults = $configs['generic_types_defaults'];
+        $this->not_nullable_types = $configs['not_nullable_types'];
         $this->filter_regex = $configs['filter_regex'];
         $this->filename = $configs['filename'];
     }
@@ -42,6 +45,11 @@ class Config
     public function getGenericTypesDefaults(): array
     {
         return $this->generic_types_defaults ?? [];
+    }
+
+    public function getNotNullableTypes(): array
+    {
+        return $this->not_nullable_types ?? [];
     }
 
     public function getFilterRegex(string $type): string
