@@ -46,5 +46,11 @@ return [
         'boolean' => 'false',
         'string' => "''",
         'number' => '0',
+        'integer' => '0',
+        'array' => '[]',
+    ],
+    'not_nullable_types' => [
+        'boolean',
+        'string'
     ],
 ];

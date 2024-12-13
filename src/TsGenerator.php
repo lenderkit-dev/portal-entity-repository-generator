@@ -137,6 +137,7 @@ class TsGenerator
             ARRAY_FILTER_USE_KEY,
         );
         $genericTypesDefaults = $this->config->getGenericTypesDefaults();
+        $notNullableTypes = $this->config->getNotNullableTypes();
         $baseModelOutputStructure = $this->config->getOutputStructure(static::GEN_TYPE_MODEL_BASE);
         $mainModelOutputStructure = $this->config->getOutputStructure(static::GEN_TYPE_MODEL);
         $translateModelOutputStructure = $this->config->getOutputStructure(static::GEN_TYPE_MODEL_TRANSLATION);
@@ -177,7 +178,6 @@ class TsGenerator
             $enums = [];
 
             foreach ($properties as $propertyName => $propertyInfo) {
-
                 if (! isset($propertyInfo['x-module']) || $propertyInfo['x-module'] !== $modelModule) {
                     continue;
                 }
@@ -187,21 +187,25 @@ class TsGenerator
 
                 [$propertyType, $addImport] = $this->getPropertyType($propertyInfo);
                 $additionalImport = array_merge($additionalImport, $addImport);
+                $nullableType = true;
 
                 if (isset($propertyInfo['default'])) {
                     $defaultValue = 'string' === $propertyType
                         ? "'{$propertyInfo['default']}'"
                         : $propertyInfo['default'];
+                    $nullableType = false;
                 } else {
-                    $defaultValue = array_key_exists($propertyType, $genericTypesDefaults)
-                        ? $genericTypesDefaults[$propertyType] : 'null';
+                    $type = $this->getSchemaType($propertyInfo);
+                    $defaultValue = $type && array_key_exists($type, $genericTypesDefaults)
+                        ? $genericTypesDefaults[$type] : 'null';
+                    $nullableType = ! in_array($type, $notNullableTypes);
                 }
+                $nullable = $nullableType && (! in_array($propertyName, $requiredProperties) || $defaultValue === 'null');
 
                 $additionalProperties .= strtr(file_get_contents('stubs/model/model_property.stub'), [
                     '{name}' => $propertyName,
                     '{type}' => $propertyType,
-                    '{nullable}' => ! in_array($propertyName, $requiredProperties) || $defaultValue === 'null'
-                        ? ' | null' : '',
+                    '{nullable}' => $nullable ? ' | null' : '',
                     '{default}' => " = {$defaultValue}",
                 ]);
             }
@@ -364,13 +368,23 @@ class TsGenerator
         return $source;
     }
 
+    protected function getSchemaType(array $propertyInfo): string
+    {
+        $type = '';
+        if (isset($propertyInfo['type'])) {
+            $type = is_array($propertyInfo['type']) ? array_shift($propertyInfo['type']) : $propertyInfo['type'];
+        }
+
+        return $type;
+    }
+
     protected function getPropertyType(array $propertyInfo): array
     {
         $additionalImport = [];
         $propertyType = '';
 
         if (isset($propertyInfo['type'])) {
-            $type = is_array($propertyInfo['type']) ? array_shift($propertyInfo['type']) : $propertyInfo['type'];
+            $type = $this->getSchemaType($propertyInfo);
 
             if ($type === 'array' && isset($propertyInfo['items'])) {
                 [$itemType, $additionalImport] = $this->getPropertyType($propertyInfo['items']);
