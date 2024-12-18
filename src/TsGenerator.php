@@ -61,7 +61,7 @@ class TsGenerator
                     printInfo("Mapping path '{$path}', method '{$method}'...");
 
                     if ($module && (! isset($info['x-modules']) || ! in_array($module, $info['x-modules']))) {
-                        printWarning(
+                        printInfo(
                             "The 'x-modules' not contain provided module: path '{$path}', method '{$method}', skipping...",
                         );
 
@@ -81,7 +81,7 @@ class TsGenerator
                     $responseType = $this->getResponseType($data, array_shift($info['responses']));
 
                     if (! $responseType) {
-                        printWarning("Can't resolve response type for '{$operationId}': '{$path}' '{$method}'.");
+                        printWarning("Can't resolve response type for '{$operationId}': '{$path}' '{$method}'. Setting 'collection' type by default");
                         $responseType = 'collection';
                     }
 
@@ -187,7 +187,6 @@ class TsGenerator
 
                 [$propertyType, $addImport] = $this->getPropertyType($propertyInfo);
                 $additionalImport = array_merge($additionalImport, $addImport);
-                $nullableType = true;
 
                 if (isset($propertyInfo['default'])) {
                     $defaultValue = 'string' === $propertyType
@@ -195,10 +194,14 @@ class TsGenerator
                         : $propertyInfo['default'];
                     $nullableType = false;
                 } else {
-                    $type = $this->getSchemaType($propertyInfo);
-                    $defaultValue = $type && array_key_exists($type, $genericTypesDefaults)
-                        ? $genericTypesDefaults[$type] : 'null';
-                    $nullableType = ! in_array($type, $notNullableTypes);
+                    $schemaType = $this->getSchemaType($propertyInfo);
+                    $defaultValue = match (true) {
+                        array_key_exists($schemaType, $genericTypesDefaults) => $genericTypesDefaults[$schemaType],
+                        array_key_exists($propertyType, $genericTypesDefaults) => $genericTypesDefaults[$propertyType],
+                        default => 'null',
+                    };
+                    $nullableType = ! in_array($schemaType, $notNullableTypes)
+                        || ! in_array($propertyType, $notNullableTypes);
                 }
                 $nullable = $nullableType && (! in_array($propertyName, $requiredProperties) || $defaultValue === 'null');
 
